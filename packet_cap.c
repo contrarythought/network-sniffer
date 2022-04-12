@@ -36,6 +36,7 @@ static inline void fatal(char *failed_in, char *e_buf) {
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
 void print_ethernet_header(const u_char *header_start);
 void print_ip_header(const u_char *header_start);
+void print_tcp_header(const u_char *header_start);
 
 int main(int argc, char **argv) {
     char e_buf[PCAP_ERRBUF_SIZE];
@@ -79,11 +80,20 @@ int main(int argc, char **argv) {
 
 // TODO
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
+    uint total_packet_len;
+
     // ethernet header comes first
     print_ethernet_header(packet);
 
     // ip header comes second
     print_ip_header(packet + sizeof(struct ethhdr));
+
+    // tcp header comes last
+    print_tcp_header(packet + sizeof(struct ethhdr) + sizeof(struct iphdr));
+}
+
+// TODO
+void print_tcp_header(const u_char *header_start) {
 
 }
 

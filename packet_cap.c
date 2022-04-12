@@ -99,8 +99,10 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
 // TODO
 void print_tcp_header(const u_char *header_start) {
     struct tcphdr *tcp_header = (struct tcphdr *) header_start;
-    printf("\t\tSource port:\t%d\n", tcp_header->source);
-    printf("\t\tDestination port:\t%d\n", tcp_header->dest);
+    printf("\t\tSource port:\t%02x\n", tcp_header->source);
+    printf("\t\tDestination port:\t%02x\n", tcp_header->dest);
+
+    if(tcp_header->th_flags & TH_FIN)
 }
 
 void print_ip_header(const u_char *header_start) {

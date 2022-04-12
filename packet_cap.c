@@ -66,12 +66,16 @@ int main(int argc, char **argv) {
     dev_to_sniff = menu[c - 1];
     printf("Chose %s\n", dev_to_sniff);
 
-    pcap_t *packet_handle = pcap_open_live(dev_to_sniff, BUFSIZ, 1, 0, e_buf);
+    int num_packets;
+    printf("How many packets to capture?\n");
+    scanf("%d", &num_packets);
+
+    pcap_t *packet_handle = pcap_open_live(dev_to_sniff, BUFSIZ, 1, 1000, e_buf);
     if(!packet_handle)
         fatal("pcap_open_live", e_buf);
 
 
-    pcap_loop(packet_handle, -1, packet_handler, NULL);
+    pcap_loop(packet_handle, num_packets, packet_handler, NULL);
 
     pcap_close(packet_handle); 
     pcap_freealldevs(dev_list);     
@@ -94,7 +98,9 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
 
 // TODO
 void print_tcp_header(const u_char *header_start) {
-
+    struct tcphdr *tcp_header = (struct tcphdr *) header_start;
+    printf("\t\tSource port:\t%d\n", tcp_header->source);
+    printf("\t\tDestination port:\t%d\n", tcp_header->dest);
 }
 
 void print_ip_header(const u_char *header_start) {

@@ -34,7 +34,8 @@ static inline void fatal(char *failed_in, char *e_buf) {
 }
 
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
-void print_ethernet_header(u_char *packet);
+void print_ethernet_header(const u_char *header_start);
+void print_ip_header(const u_char *header_start);
 
 int main(int argc, char **argv) {
     char e_buf[PCAP_ERRBUF_SIZE];
@@ -78,12 +79,23 @@ int main(int argc, char **argv) {
 
 // TODO
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
+    // ethernet header comes first
     print_ethernet_header(packet);
 
+    // ip header comes second
+    print_ip_header(packet + sizeof(struct ethhdr));
 
 }
 
-void print_ethernet_header(u_char *packet) {
+void print_ip_header(const u_char *header_start) {
+    struct iphdr *ip_header = (struct iphdr *) header_start;
+    
+    printf("\tSource IP address:\t%s\n", inet_ntoa(*(struct in_addr *) &ip_header->saddr));
+    printf("\tDestination IP address:\t%s\n", inet_ntoa(*(struct in_addr *) &ip_header->daddr));
+
+}
+
+void print_ethernet_header(const u_char *packet) {
     struct ethhdr *ethernet_header = (struct ethhdr *) packet;
 
     printf("Source MAC address:\t");

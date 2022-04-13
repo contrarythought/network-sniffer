@@ -5,7 +5,6 @@
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
 #include <pcap.h>
-#include <libnet.h>
 
 #define ETH_SIZE    14
 #define IP_SIZE     20 
@@ -86,29 +85,46 @@ int main(int argc, char **argv) {
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
     uint total_packet_len;
 
-    // ethernet header comes first
+    // 2nd layer
     print_ethernet_header(packet);
 
-    // ip header comes second
+    // 3rd layer
     print_ip_header(packet + sizeof(struct ethhdr));
 
-    // tcp header comes last
+    // 4th layer
     print_tcp_header(packet + sizeof(struct ethhdr) + sizeof(struct iphdr));
+
+    
 }
 
 // TODO
 void print_tcp_header(const u_char *header_start) {
     struct tcphdr *tcp_header = (struct tcphdr *) header_start;
-    printf("\t\tSource port:\t%02x\n", tcp_header->source);
-    printf("\t\tDestination port:\t%02x\n", tcp_header->dest);
+    printf("\t\tSource port:\t%02x", ntohs(tcp_header->source));
+    printf("\t\tDestination port:\t%02x\n", ntohs(tcp_header->dest));
+    printf("\t\tSeq Number:\t%u\n", ntohl(tcp_header->th_seq));
+    printf("\t\tAck Number:\t%u\n", ntohl(tcp_header->th_ack));
 
+    printf("\t\t\tFlags:\t");
     if(tcp_header->th_flags & TH_FIN)
+        printf("FIN ");
+    if(tcp_header->th_flags & TH_ACK)
+        printf("ACK ");
+    if(tcp_header->th_flags & TH_SYN)
+        printf("SYN ");
+    if(tcp_header->th_flags & TH_RST)
+        printf("RST ");
+    if(tcp_header->th_flags & TH_PUSH)
+        printf("PUSH ");
+    if(tcp_header->th_flags & TH_URG)
+        printf("URG ");
+    printf("\n");    
 }
 
 void print_ip_header(const u_char *header_start) {
     struct iphdr *ip_header = (struct iphdr *) header_start;
     
-    printf("\tSource IP address:\t%s\n", inet_ntoa(*(struct in_addr *) &ip_header->saddr));
+    printf("\tSource IP address:\t%s", inet_ntoa(*(struct in_addr *) &ip_header->saddr));
     printf("\tDestination IP address:\t%s\n", inet_ntoa(*(struct in_addr *) &ip_header->daddr));
 
 }
@@ -120,7 +136,7 @@ void print_ethernet_header(const u_char *packet) {
     int i;
     for(i = 0; i < ETH_ALEN; i++) 
         printf("%02x", ethernet_header->h_source[i]);
-    printf("\n");
+    printf("\t");
 
     printf("Destination MAC address:\t");
     for(i = 0; i < ETH_ALEN; i++)

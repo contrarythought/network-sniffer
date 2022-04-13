@@ -35,7 +35,7 @@ static inline void fatal(char *failed_in, char *e_buf) {
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
 void print_ethernet_header(const u_char *header_start);
 void print_ip_header(const u_char *header_start);
-void print_tcp_header(const u_char *header_start);
+uint print_tcp_header(const u_char *header_start);
 
 int main(int argc, char **argv) {
     char e_buf[PCAP_ERRBUF_SIZE];
@@ -83,7 +83,6 @@ int main(int argc, char **argv) {
 
 // TODO
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
-    uint total_packet_len;
 
     // 2nd layer
     print_ethernet_header(packet);
@@ -92,13 +91,14 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
     print_ip_header(packet + sizeof(struct ethhdr));
 
     // 4th layer
-    print_tcp_header(packet + sizeof(struct ethhdr) + sizeof(struct iphdr));
+    uint tcp_len = print_tcp_header(packet + sizeof(struct ethhdr) + sizeof(struct iphdr));
 
+    // data layer
     
 }
 
 // TODO
-void print_tcp_header(const u_char *header_start) {
+uint print_tcp_header(const u_char *header_start) {
     struct tcphdr *tcp_header = (struct tcphdr *) header_start;
     printf("\t\tSource port:\t%02x", ntohs(tcp_header->source));
     printf("\t\tDestination port:\t%02x\n", ntohs(tcp_header->dest));
@@ -119,6 +119,8 @@ void print_tcp_header(const u_char *header_start) {
     if(tcp_header->th_flags & TH_URG)
         printf("URG ");
     printf("\n");    
+
+    return tcp_header->th_off * 4;
 }
 
 void print_ip_header(const u_char *header_start) {

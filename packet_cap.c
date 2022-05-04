@@ -9,7 +9,7 @@
 #define ETH_SIZE    14
 #define IP_SIZE     20 
 
-// TODO - FIX
+/*
 void pkt_dump(const u_char *packet, u_int len) {
     int i;
     for(i = 0; i <= len; i++) {
@@ -26,6 +26,25 @@ void pkt_dump(const u_char *packet, u_int len) {
             printf("%02x", packet[i]);
     }
 }
+*/
+
+void pkt_dump(const u_char *packet, u_int len) {
+    int i;
+    for(i = 0; i < len; i++) {
+        printf("%02x", packet[i]);
+        if((i % 16) == 15 || i == len - 1) {
+            printf("\t|\t");
+            int j;
+            for(j = (i % 16) == 15 ? (i - 15) : i - (i % 15); j <= i; j++) {
+                if(packet[j] > 32 && packet[j] < 127)
+                    printf("%c", packet[j]);
+                else 
+                    printf(".");
+            }
+            printf("\n");
+        }
+    }
+}
 
 static inline void fatal(char *failed_in, char *e_buf) {
     printf("%s: %s\n", failed_in, e_buf);
@@ -35,7 +54,8 @@ static inline void fatal(char *failed_in, char *e_buf) {
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet);
 void print_ethernet_header(const u_char *header_start);
 void print_ip_header(const u_char *header_start);
-uint print_tcp_header(const u_char *header_start);
+__u_int print_tcp_header(const u_char *header_start);
+void print_data(const u_char *header_start, __u_int data_len);
 
 int main(int argc, char **argv) {
     char e_buf[PCAP_ERRBUF_SIZE];
@@ -84,6 +104,7 @@ int main(int argc, char **argv) {
 // TODO
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 
+    __u_int total_packet_size = 0;
     // 2nd layer
     print_ethernet_header(packet);
 
@@ -91,14 +112,27 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
     print_ip_header(packet + sizeof(struct ethhdr));
 
     // 4th layer
-    uint tcp_len = print_tcp_header(packet + sizeof(struct ethhdr) + sizeof(struct iphdr));
+    __u_int tcp_len = print_tcp_header(packet + sizeof(struct ethhdr) + sizeof(struct iphdr));
+
+    total_packet_size = sizeof(struct ethhdr) + sizeof(struct iphdr) + tcp_len;
+    __u_int data_len = header->len - total_packet_size;
 
     // data layer
-    
+    if(!data_len)
+        printf("No packet data available\n");
+    else 
+        print_data(packet + sizeof(struct ethhdr) + sizeof(struct iphdr) + tcp_len, data_len);
 }
 
 // TODO
-uint print_tcp_header(const u_char *header_start) {
+void print_data(const u_char *header_start, __u_int data_len) {
+    printf("Captured %d bytes of data:\n", data_len);
+    pkt_dump(header_start, data_len);
+    printf("\n");
+}
+
+// TODO
+__u_int print_tcp_header(const u_char *header_start) {
     struct tcphdr *tcp_header = (struct tcphdr *) header_start;
     printf("\t\tSource port:\t%02x", ntohs(tcp_header->source));
     printf("\t\tDestination port:\t%02x\n", ntohs(tcp_header->dest));
@@ -120,6 +154,7 @@ uint print_tcp_header(const u_char *header_start) {
         printf("URG ");
     printf("\n");    
 
+    // offset is the # of 32 bit words in the header. Each 32 bit word = 4 bytes, hence multiply the offset by 4 to find TCP header size in bytes
     return tcp_header->th_off * 4;
 }
 

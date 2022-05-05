@@ -101,7 +101,6 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-// TODO
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 
     __u_int total_packet_size = 0;
@@ -124,14 +123,12 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
         print_data(packet + sizeof(struct ethhdr) + sizeof(struct iphdr) + tcp_len, data_len);
 }
 
-// TODO
 void print_data(const u_char *header_start, __u_int data_len) {
     printf("Captured %d bytes of data:\n", data_len);
     pkt_dump(header_start, data_len);
     printf("\n");
 }
 
-// TODO
 __u_int print_tcp_header(const u_char *header_start) {
     struct tcphdr *tcp_header = (struct tcphdr *) header_start;
     printf("\t\tSource port:\t%02x", ntohs(tcp_header->source));
